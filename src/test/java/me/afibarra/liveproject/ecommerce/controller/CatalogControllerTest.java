@@ -1,42 +1,39 @@
 package me.afibarra.liveproject.ecommerce.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
-import com.gargoylesoftware.htmlunit.html.HtmlDivision;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.html.HtmlPlainText;
-import java.util.List;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import me.afibarra.liveproject.ecommerce.repository.ICatalogRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.web.servlet.MockMvc;
 
-public class CatalogControllerTest {
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-    private WebClient webClient;
+@ExtendWith(SpringExtension.class)
+@ActiveProfiles("test")
+@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+class CatalogControllerTest {
 
-    @BeforeEach
-    public void init() throws Exception {
-        webClient = new WebClient();
-    }
+    @Autowired
+    private MockMvc mvc;
 
-    @AfterEach
-    public void close() throws Exception {
-        webClient.close();
-    }
+    @Autowired
+    private ICatalogRepository catalogRepository;
 
     @Test
-    public void success_whenRetrievingCatalog() throws Exception {
-        String URL = "http://127.0.0.1:8080/catalog";
-        String XPATH_CARD_BODY = "//div[@class='card-body']";
+    public void catalogTest() throws Exception {
+        int catalogSize = catalogRepository.findAll().size();
 
-        final HtmlPage htmlPage = webClient.getPage(URL);
-        List<HtmlDivision> cards = htmlPage.getByXPath(XPATH_CARD_BODY);
-
-        assertThat(cards).isNotNull();
-        assertThat(cards).isNotEmpty();
+        this.mvc.perform(get("/catalog"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("welcome"))
+                .andExpect(model().attributeExists("catalog"))
+                .andExpect(model().attribute("catalog", hasSize(catalogSize)));
     }
 }
